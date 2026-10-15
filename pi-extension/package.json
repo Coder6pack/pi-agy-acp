@@ -1,0 +1,17 @@
+{
+  "name": "pi-antigravity-provider",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Pi provider backed by the Google Antigravity CLI (agy)",
+  "keywords": ["pi-package"],
+  "peerDependencies": {
+    "@earendil-works/pi-ai": "*",
+    "@earendil-works/pi-coding-agent": "*"
+  },
+  "pi": {
+    "extensions": [
+      "./index.ts"
+    ]
+  }
+}
