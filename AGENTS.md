@@ -49,7 +49,7 @@ No separate lint/typecheck/format commands — just `cargo build` and `cargo tes
 | Var | Effect |
 |---|---|
 | `AGY_EXTRA_ARGS` | Space-separated extra args passed to every `agy` invocation |
-| `AGY_PRINT_TIMEOUT` | Override the bridge-owned `agy --print-timeout` (default `24h`) |
+| `AGY_PRINT_TIMEOUT` | Override the bridge-owned `agy --print-timeout` (default `1h`) |
 | `GEMINI_API_KEY` | API key for e2e tests and CI |
 
 ## Quirks
@@ -61,7 +61,7 @@ No separate lint/typecheck/format commands — just `cargo build` and `cargo tes
 - `handle_session_load` returns a `Vec<String>` (multiple notifications + final response), not a single response like other methods.
 - Conversation binding: every `agy` invocation gets a unique `--log-file`; the adapter reads that invocation's `Created conversation <uuid>` record (or its own child PID's open DB as a fallback). Never infer ownership from a process-global directory diff, because parallel invocations can otherwise cross-bind.
 - Final-answer recovery: SQLite provides streaming/tool/history updates, while captured `agy --print` stdout is the fallback when SQLite emitted no assistant text. A successful process with no conversation ID or no assistant response fails closed instead of returning an empty `end_turn`.
-- Turn completion: the bridge raises `agy --print-timeout` to 24 hours by default and treats an observed print timeout or any non-zero `agy` exit as a failed ACP turn, even if partial updates were streamed. It never converts either condition into `end_turn`.
+- Turn completion: the bridge raises `agy --print-timeout` to 1 hour by default and treats an observed print timeout or any non-zero `agy` exit as a failed ACP turn, even if partial updates were streamed. It never converts either condition into `end_turn`.
 - `fetch_available_models()` runs `agy models` synchronously during `Adapter::new()`. If `agy` isn't installed, models list is empty (no error).
 - `session/cancel` is a no-op — always returns `{}`.
 - Both `session/set_model` and `session/setConfigOption` are accepted for model selection.

@@ -5,7 +5,7 @@ use std::fs;
 use std::path::PathBuf;
 use uuid::Uuid;
 
-use crate::adapter::{filter_narration, Adapter};
+use crate::adapter::{filter_narration, parse_available_models, Adapter};
 use crate::protobuf::{
     extract_text_from_step_payload, extract_thought_from_step_payload,
     extract_title_from_step_payload, extract_tool_name, extract_tool_update_from_step_payload,
@@ -1694,6 +1694,22 @@ fn test_filter_narration_all_narration_drops_all() {
     ];
     let result = filter_narration(&parts);
     assert_eq!(result, None);
+}
+
+#[test]
+fn test_parse_available_models_extracts_ids_from_catalog_output() {
+    let output = b"Fetching available models...\n\
+        gemini-4-argon-medium\tGemini 4 Argon (Medium)\n\
+        claude-opus-5-5-high  Claude Opus 5.5 (High)\n\
+        gemini-4-argon-medium\tDuplicate\n";
+
+    assert_eq!(
+        parse_available_models(output),
+        vec![
+            "gemini-4-argon-medium".to_string(),
+            "claude-opus-5-5-high".to_string(),
+        ]
+    );
 }
 
 #[test]

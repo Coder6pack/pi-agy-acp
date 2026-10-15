@@ -19,6 +19,36 @@ use crate::db::read_replay_updates_from_db;
 use crate::streaming::poll_streaming_delta;
 use crate::types::*;
 
+const DEFAULT_PRINT_TIMEOUT: &str = "1h";
+
+/// Parse `agy models` output into the IDs accepted by `agy --model`.
+///
+/// Current versions print a tab-separated catalog (`id<TAB>display name`) and
+/// prepend a progress line. The display name must never be sent back as part
+/// of the model ID.
+pub(crate) fn parse_available_models(output: &[u8]) -> Vec<String> {
+    let mut models = Vec::new();
+    for line in String::from_utf8_lossy(output).lines() {
+        let trimmed = line.trim();
+        if trimmed.is_empty() || trimmed.to_ascii_lowercase().starts_with("fetching ") {
+            continue;
+        }
+
+        let Some(model_id) = trimmed.split_whitespace().next() else {
+            continue;
+        };
+        let valid_id = model_id.chars().enumerate().all(|(index, ch)| {
+            (index == 0 && ch.is_ascii_alphanumeric())
+                || (index > 0
+                    && (ch.is_ascii_alphanumeric() || matches!(ch, '.' | '_' | ':' | '-')))
+        });
+        if valid_id && !models.iter().any(|known| known == model_id) {
+            models.push(model_id.to_string());
+        }
+    }
+    models
+}
+
 pub struct Adapter {
     pub sessions: HashMap<String, Session>,
     pub working_dir: String,
@@ -52,20 +82,14 @@ impl Adapter {
         }
     }
 
-    /// Run `agy models` and parse the output into a list of model names.
+    /// Run `agy models` and parse the output into model IDs.
     fn fetch_available_models() -> Vec<String> {
         std::process::Command::new("agy")
             .arg("models")
             .output()
             .ok()
             .filter(|o| o.status.success())
-            .map(|o| {
-                String::from_utf8_lossy(&o.stdout)
-                    .lines()
-                    .map(|l| l.trim().to_string())
-                    .filter(|l| !l.is_empty())
-                    .collect()
-            })
+            .map(|o| parse_available_models(&o.stdout))
             .unwrap_or_default()
     }
 
@@ -614,7 +638,10 @@ impl Adapter {
         args.push("--log-file".to_string());
         args.push(run_log_path.to_string_lossy().to_string());
         args.push("--print-timeout".to_string());
-        args.push(std::env::var("AGY_PRINT_TIMEOUT").unwrap_or_else(|_| "24h".to_string()));
+        args.push(
+            std::env::var("AGY_PRINT_TIMEOUT")
+                .unwrap_or_else(|_| DEFAULT_PRINT_TIMEOUT.to_string()),
+        );
         if let Ok(extra) = std::env::var("AGY_EXTRA_ARGS") {
             args.extend(extra.split_whitespace().map(String::from));
         }

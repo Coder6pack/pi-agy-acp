@@ -26,7 +26,7 @@ export const ANTIGRAVITY_PROVIDER = "antigravity";
 
 const DEFAULT_CONTEXT_WINDOW = 1_000_000;
 const DEFAULT_MAX_TOKENS = 128_000;
-const DEFAULT_PRINT_TIMEOUT = "24h";
+const DEFAULT_PRINT_TIMEOUT = "1h";
 const FALLBACK_MODELS = [
 	["gemini-4-argon-medium", "Gemini 4 Argon (Medium)"],
 	["gemini-4-argon-high", "Gemini 4 Argon (High)"],

@@ -37,7 +37,7 @@ request reports the real CLI error instead of hiding the provider.
   `GEMINI_API_KEY`.
 - The Pi working directory is passed to `agy` with `--add-dir`.
 - `AGY_EXTRA_ARGS` is split into additional CLI arguments.
-- `AGY_PRINT_TIMEOUT` controls the print-mode timeout (default `24h`).
+- `AGY_PRINT_TIMEOUT` controls the print-mode timeout (default `1h`).
 - Set `ANTIGRAVITY_DANGEROUSLY_SKIP_PERMISSIONS=1` only if you explicitly want
   `agy` to auto-approve its own tool calls.
 - `ANTIGRAVITY_CONTEXT_WINDOW` and `ANTIGRAVITY_MAX_TOKENS` override the

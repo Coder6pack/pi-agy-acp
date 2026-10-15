@@ -76,7 +76,7 @@ Set the `AGY_EXTRA_ARGS` environment variable to pass additional arguments to ev
 |---|---|
 | `GEMINI_API_KEY` | API key for Gemini (passed through to `agy`) |
 | `AGY_EXTRA_ARGS` | Space-separated extra args passed to every `agy` invocation |
-| `AGY_PRINT_TIMEOUT` | Maximum time `agy --print` may wait for a trustworthy completed turn (default `24h`) |
+| `AGY_PRINT_TIMEOUT` | Maximum time `agy --print` may wait for a trustworthy completed turn (default `1h`) |
 
 ## Use with Pi
 
