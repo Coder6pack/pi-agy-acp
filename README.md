@@ -77,6 +77,7 @@ Set the `AGY_EXTRA_ARGS` environment variable to pass additional arguments to ev
 | `GEMINI_API_KEY` | API key for Gemini (passed through to `agy`) |
 | `AGY_EXTRA_ARGS` | Space-separated extra args passed to every `agy` invocation |
 | `AGY_PRINT_TIMEOUT` | Maximum time `agy --print` may wait for a trustworthy completed turn (default `1h`) |
+| `ANTIGRAVITY_DANGEROUSLY_SKIP_PERMISSIONS` / `AGY_DANGEROUSLY_SKIP_PERMISSIONS` | Pi provider only: auto-approval is enabled by default; set to `0`/`false` to disable when agy allow-rules are configured |
 
 ## Use with Pi
 
@@ -96,7 +97,9 @@ pi --model antigravity/gemini-4-argon-medium
 See [`pi-extension/README.md`](pi-extension/README.md) for configuration and
 limitations. This provider lets `agy` run its own tools and streams the final
 agent response into Pi; it does not translate Pi tool calls into Antigravity
-CLI tool calls.
+CLI tool calls. Because Pi invokes `agy` headlessly through stream-json, the
+provider auto-approves agy tools by default; set
+`ANTIGRAVITY_DANGEROUSLY_SKIP_PERMISSIONS=0` when using agy allow-rules instead.
 
 ## Session Persistence
 

@@ -64,6 +64,10 @@ interface AgyResult {
 	response?: string;
 	error?: string;
 	usage?: Record<string, unknown>;
+	denied_actions?: Array<{
+		action?: string;
+		display_name?: string;
+	}>;
 }
 
 interface AgyStreamEvent {
@@ -310,6 +314,38 @@ function parseShellArgs(value: string): string[] {
 	return args;
 }
 
+/**
+ * `agy` stream-json is a headless protocol: it cannot display the normal
+ * permission prompt. Without an explicit policy, tool calls are therefore
+ * denied and agy can return a successful result with no response text.
+ *
+ * Keep the provider useful as a coding provider by opting into agy's
+ * auto-approval by default. Users who have configured agy allow-rules can set
+ * either environment variable to `0`, `false`, `no`, or `off` to disable it.
+ */
+function shouldSkipPermissions(env: NodeJS.ProcessEnv): boolean {
+	const name = env.ANTIGRAVITY_DANGEROUSLY_SKIP_PERMISSIONS !== undefined
+		? "ANTIGRAVITY_DANGEROUSLY_SKIP_PERMISSIONS"
+		: "AGY_DANGEROUSLY_SKIP_PERMISSIONS";
+	const configured = env[name];
+	if (configured === undefined) return true;
+	const normalized = configured.trim().toLowerCase();
+	if (["1", "true", "yes", "on"].includes(normalized)) return true;
+	if (["0", "false", "no", "off"].includes(normalized)) return false;
+	console.warn(
+		`[agy-acp] invalid ${name}=${JSON.stringify(configured)}; disabling automatic tool approval. ` +
+		"Use 1/true to enable or 0/false to disable.",
+	);
+	return false;
+}
+
+function deniedActionsText(result: AgyResult): string {
+	return (result.denied_actions ?? [])
+		.map((action) => action.display_name || action.action || "")
+		.filter(Boolean)
+		.join(", ");
+}
+
 function environmentFor(options?: SimpleStreamOptions): NodeJS.ProcessEnv {
 	return {
 		...process.env,
@@ -448,10 +484,11 @@ async function createProcess(
 	];
 	const effort = effortArg(options?.reasoning);
 	if (effort) args.push("--effort", effort);
-	if (env.ANTIGRAVITY_DANGEROUSLY_SKIP_PERMISSIONS === "1" || env.AGY_DANGEROUSLY_SKIP_PERMISSIONS === "1") {
+	const extraArgs = env.AGY_EXTRA_ARGS ? parseShellArgs(env.AGY_EXTRA_ARGS) : [];
+	if (shouldSkipPermissions(env) && !extraArgs.includes("--dangerously-skip-permissions")) {
 		args.push("--dangerously-skip-permissions");
 	}
-	if (env.AGY_EXTRA_ARGS) args.push(...parseShellArgs(env.AGY_EXTRA_ARGS));
+	args.push(...extraArgs);
 
 	let child: ChildProcessWithoutNullStreams;
 	try {
@@ -676,6 +713,19 @@ async function runTurn(
 				processState.systemSignature = systemSignature(context);
 
 				if (result.status?.toUpperCase() === "SUCCESS") {
+					if (!textStarted && resultText.length === 0) {
+						const denied = deniedActionsText(result);
+						if (denied) {
+							throw new Error(
+								`agy denied required tool permissions (${denied}). ` +
+									"Enable ANTIGRAVITY_DANGEROUSLY_SKIP_PERMISSIONS=1 or configure agy allow-rules.",
+							);
+						}
+						const stderr = processState.stderr.trim();
+						throw new Error(
+							`agy completed without an assistant response${stderr ? `: ${stderr.slice(-2000)}` : "."}`,
+						);
+					}
 					output.stopReason = "stop";
 					output.rawStopReason = result.status;
 					stream.push({ type: "done", reason: "stop", message: output });
@@ -741,4 +791,6 @@ export const __testing = {
 	modelConfig,
 	parseUsage,
 	subtractUsage,
+	shouldSkipPermissions,
+	deniedActionsText,
 };

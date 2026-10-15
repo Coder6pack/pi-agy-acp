@@ -38,8 +38,13 @@ request reports the real CLI error instead of hiding the provider.
 - The Pi working directory is passed to `agy` with `--add-dir`.
 - `AGY_EXTRA_ARGS` is split into additional CLI arguments.
 - `AGY_PRINT_TIMEOUT` controls the print-mode timeout (default `1h`).
-- Set `ANTIGRAVITY_DANGEROUSLY_SKIP_PERMISSIONS=1` only if you explicitly want
-  `agy` to auto-approve its own tool calls.
+- Because Pi runs `agy` through headless `stream-json`, the provider enables
+  `--dangerously-skip-permissions` by default so tool calls can run instead of
+  waiting for an approval UI that does not exist. Set
+  `ANTIGRAVITY_DANGEROUSLY_SKIP_PERMISSIONS=0` (or
+  `AGY_DANGEROUSLY_SKIP_PERMISSIONS=0`) if you have configured agy allow-rules
+  and want automatic approval disabled. `AGY_EXTRA_ARGS` can explicitly add
+  `--dangerously-skip-permissions` as an alternative.
 - `ANTIGRAVITY_CONTEXT_WINDOW` and `ANTIGRAVITY_MAX_TOKENS` override the
   catalog metadata when the installed CLI uses different limits.
 
@@ -47,8 +52,10 @@ request reports the real CLI error instead of hiding the provider.
 
 `agy` is an agent CLI, not a public model HTTP endpoint. The provider therefore
 lets Antigravity execute its own tools and returns its final response to Pi;
-Pi's own tool calls are not forwarded into `agy`. Text/image input is supported
-at the Pi boundary, but images are represented as a text placeholder because
+Pi's own tool calls are not forwarded into `agy`. Automatic tool approval is
+enabled by default for this headless integration; disable it and configure
+agy allow-rules if you need a stricter policy. Text/image input is supported at
+the Pi boundary, but images are represented as a text placeholder because
 `agy` print-mode stream input is currently text-only.
 
 The provider reports zero cost because Antigravity subscription/account
